@@ -1,10 +1,13 @@
 import numpy as np
+import pandas as pd
 import random
 
 class Grid:
     """
     Class that represents the neighborhood grid and
     includes various operations such as changing grid lines.
+    # TODO: function that calculates the different cost quantities for a specific timeinterval
+    # TODO: function for changing the pv of a specific house and storage of specific house
     """
 
     def __init__(self,num_houses=10, num_storages=1,max_capacity=5,num_pvtypes=1):
@@ -110,6 +113,76 @@ class Grid:
         print('pv_types: ' + str(self._house_pv_type))
         print('storag_conns: ' + str(self._house_storage_connections))
 
+    def simulate(self, data_cons, data_prod):
+        """
+        Function that simulates the neighborhood energyflow for a given timeinterval.
+        It iterates through time and checks for each house the demand/production.
+        If a house demands energy and it is in the storage it just takes this, otherwise it buys it from the grid.
+        If a house has a overproduction than it stores the energy in the storage if it is empty. Otherwise
+        it sells the power to the grid.
+        # TODO: Include costs in the function
+        # TODO: Dimension check for self._num_houses == 1 is not yet perfect!!
+        :param data_cons: np.ndarray that contains the consumption data for all houses
+        :param data_prod: np.ndarray that contains the pv_production data for all types of pv
+        :return: Dictionary with several quantities
+        """
+        # Check dimensions
+
+        if self._num_houses > 1: assert data_cons.shape[1] == self._num_houses, \
+            'grid.simulate(): df_cons should have consumption data for houses'
+        if self._num_pvtypes > 1: assert data_prod.shape[1] == self._num_pvtypes, \
+            'grid.simulate(): df_prod should hold prod data for all pv types'
+
+        # If there are pvtypes both DataFrames should have same length
+        if self._num_pvtypes > 0: assert data_cons.shape == data_prod.shape, 'DataFrames of prod and cons need same shape!'
+
+        # Create a dictionary for output
+        res_dict = {
+            "import_grid" : 0.0,
+            "export_grid" : 0.0,
+            "pv_production": 0.0
+        }
+
+        # Reshaping in the case of only a single house or single pv type
+        if self._num_houses == 1: data_cons = data_cons.reshape(data_cons.shape[0],1)
+        if self._num_pvtypes == 1: data_prod = data_prod.reshape(data_prod.shape[0],1)
+
+        # Loop over all time steps
+        for i in range(data_cons.shape[0]):
+            # Take each house
+            for house_num in range(self._num_houses):
+                # Get PV type and connected storage number
+                pv_type = self._house_pv_type[house_num]
+                storage_num = self._house_storage_connections[house_num]
+                # Get energy demand of house
+                demand = data_cons[i, house_num]
+                # Check if there is energy coming from PV
+                if pv_type > -1:
+                    # Get the energy production of that PV
+                    res_dict["pv_production"] += data_prod[i,pv_type]
+                    demand = demand - data_prod[i, pv_type]
+
+                # If the house needs energy and enough energy is in storage
+                if self._charge_level_storages[storage_num] >= demand and demand > 0:
+                    self._charge_level_storages[storage_num] -= demand
+                # If house need energy and storage only has partial energy
+                elif self._charge_level_storages[storage_num] < demand and demand > 0:
+                    demand -= self._charge_level_storages[storage_num]
+                    self._charge_level_storages[storage_num] = 0
+                    res_dict["import_grid"] += demand
+                # If house has a over production
+                elif demand < 0:
+                    production = -1*demand
+                    # If storage has enough space for the whole energy
+                    if production <= self._max_capacities_storages[storage_num] - self._charge_level_storages[storage_num]:
+                        self._charge_level_storages[storage_num] += production
+                    # If there is not enough space in the energy storage system
+                    else:
+                        production -= self._max_capacities_storages[storage_num] - self._charge_level_storages[storage_num]
+                        self._charge_level_storages[storage_num] = self._max_capacities_storages[storage_num]
+                        res_dict["export_grid"] += production
+
+        return res_dict
 
 if __name__ == '__main__':
     # Some basic tests
