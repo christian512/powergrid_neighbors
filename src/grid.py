@@ -7,7 +7,6 @@ class Grid:
     Class that represents the neighborhood grid and
     includes various operations such as changing grid lines.
     # TODO: function that calculates the different cost quantities for a specific timeinterval
-    # TODO: function for changing the pv of a specific house and storage of specific house
     """
 
     def __init__(self,num_houses=10, num_storages=1,max_capacity=5,num_pvtypes=1):
@@ -108,6 +107,26 @@ class Grid:
 
         return other_grid
 
+    def change_pvtype(self,num_house=0,pv_type=-1):
+        """
+        Changes the pv_type of a specific house
+        :param num_house: Number of house  to change the pv type of
+        :param pv_type: PV type to set house to
+        """
+        assert pv_type < self._num_pvtypes, 'Choose a PV type within the range of available pv types '
+        assert num_house < self._num_houses, 'Choose a house within the range of available houses'
+        self._house_pv_type[num_house] = pv_type
+
+    def change_storage_connection(self,num_house=0,storage_connection=0):
+        """
+        Changes the storage connection of a specific house to a specific storage
+        :param num_house: Number of house
+        :param storage_connection: Number of storage to connect to
+        """
+        assert num_house < self._num_houses, 'Wrong house index'
+        assert storage_connection < self._num_storages, 'Wrong storage index'
+        self._house_storage_connections[num_house] = storage_connection
+
     def print(self):
         """Prints certain information"""
         print('pv_types: ' + str(self._house_pv_type))
@@ -120,7 +139,6 @@ class Grid:
         If a house demands energy and it is in the storage it just takes this, otherwise it buys it from the grid.
         If a house has a overproduction than it stores the energy in the storage if it is empty. Otherwise
         it sells the power to the grid.
-        # TODO: Include costs in the function
         # TODO: Dimension check for self._num_houses == 1 is not yet perfect!!
         :param data_cons: np.ndarray that contains the consumption data for all houses
         :param data_prod: np.ndarray that contains the pv_production data for all types of pv
