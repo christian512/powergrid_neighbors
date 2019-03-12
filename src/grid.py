@@ -14,7 +14,7 @@ class Grid:
         Initializes the neighborhood grid.
         :param num_houses: Number of houses included in the neighborhood
         :param num_storages: Number of storages in the neighborhood
-        :param max_capacity: Gives the maximum capacity for the storages / either list for individual or float for everyone
+        :param max_capacity: Gives the maximum capacity [kWh] for the storages / either list for individual or float for everyone
         :param num_pvtypes: Number of different pvtypes available
         """
         # Check the dimensions:
@@ -39,6 +39,32 @@ class Grid:
         self._charge_level_storages = np.zeros(self._num_storages, dtype=float)
         # Maximum capacity of each storage in kWh
         self._max_capacities_storages = max_capacity
+
+        # Set indicator for cost settings and list all prices
+        self.__set_costs = False
+        self.__cost_kwh_grid_import = 0 # Price per kWh imported from power grid
+        self.__gain_kwh_grid_export = 0 # Price per kWh exported to the power grid
+        self.__cost_storage_per_kwh = 0 # Price per kWh in storage system
+        self.__cost_pv_per_kwp = 0
+
+
+    def set_costs(self,kwh_import=0.25,kwh_export=0.10,cost_storage_kwh=500,cost_pv_kwp=1400):
+        """
+        Setting the costs, for different quantities listed below (all prices in EURO)
+        :param kwh_import: Price per kwh imported
+        :param kwh_export: Amount you get for exporting one kWH
+        :param cost_storage_kwh: Price per kwh in storage
+        :param cost_pv_kwp: Price per kWp for solar panels
+        """
+        self.__cost_kwh_grid_import = kwh_import
+        self.__gain_kwh_grid_export = kwh_export
+        self.__cost_storage_per_kwh = cost_storage_kwh
+        self.__cost_pv_per_kwp = cost_pv_kwp
+
+
+        # indicate that prices are set
+        self.__set_costs = True
+
 
     def randomize(self):
         """
