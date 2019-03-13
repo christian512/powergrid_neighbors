@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import random
+import sys
 
 class Grid:
     """
@@ -9,13 +10,14 @@ class Grid:
     # TODO: function that calculates the different cost quantities for a specific timeinterval
     """
 
-    def __init__(self,num_houses=10, num_storages=1,max_capacity=5,num_pvtypes=1):
+    def __init__(self,num_houses=10, num_storages=1,max_capacity=5,num_pvtypes=1,pv_peakpower=1):
         """
         Initializes the neighborhood grid.
         :param num_houses: Number of houses included in the neighborhood
         :param num_storages: Number of storages in the neighborhood
         :param max_capacity: Gives the maximum capacity [kWh] for the storages / either list for individual or float for everyone
         :param num_pvtypes: Number of different pvtypes available
+        :param pv_peakpower: The peak power for all pv types [kWp], if only integer it will be changed to list (as max_capacity)
         """
         # Check the dimensions:
         assert num_houses > 0
@@ -25,7 +27,10 @@ class Grid:
             assert len(max_capacity) == num_storages
         else:
             max_capacity = np.array([max_capacity]*num_storages)
-
+        if isinstance(pv_peakpower,list) or isinstance(pv_peakpower,np.ndarray):
+            assert len(pv_peakpower) == num_pvtypes
+        else:
+            pv_peakpower = np.array([pv_peakpower]*num_pvtypes)
         # Store variables in object
         self._num_houses = num_houses
         self._num_storages = num_storages
@@ -182,14 +187,28 @@ class Grid:
 
         # Create a dictionary for output
         res_dict = {
-            "import_grid" : 0.0,
-            "export_grid" : 0.0,
-            "pv_production": 0.0
+            "import_grid_kwh" : 0.0,
+            "export_grid_kwh" : 0.0,
+            "pv_production_kwh": 0.0,
+            "setup_cost_storage" : 0.0,
+            "setup_cost_pv" : 0.0,
+            "cost_import_grid" : 0.0,
+            "reward_export_grid" : 0.0
         }
 
         # Reshaping in the case of only a single house or single pv type
         if self._num_houses == 1: data_cons = data_cons.reshape(data_cons.shape[0],1)
         if self._num_pvtypes == 1: data_prod = data_prod.reshape(data_prod.shape[0],1)
+
+        # Calculate initial costs
+        if not self.__set_costs: sys.exit('Set costs before simulating the grid!')
+        # Check which storages are used
+        used_storages = np.unique(self._house_storage_connections)
+        all_storages = np.arange(self._num_storages)
+        mask =  np.isin(all_storages,used_storages,invert=True)
+        not_used_storages = all_storages[mask]
+        for k in not_used_storages: self._max_capacities_storages[k] = 0
+        res_dict["setup_cost_storage"] = np.sum(self._max_capacities_storages)*self.__cost_storage_per_kwh
 
         # Loop over all time steps
         for i in range(data_cons.shape[0]):
@@ -203,7 +222,7 @@ class Grid:
                 # Check if there is energy coming from PV
                 if pv_type > -1:
                     # Get the energy production of that PV
-                    res_dict["pv_production"] += data_prod[i,pv_type]
+                    res_dict["pv_production_kwh"] += data_prod[i,pv_type]
                     demand = demand - data_prod[i, pv_type]
 
                 # If the house needs energy and enough energy is in storage
@@ -213,7 +232,7 @@ class Grid:
                 elif self._charge_level_storages[storage_num] < demand and demand > 0:
                     demand -= self._charge_level_storages[storage_num]
                     self._charge_level_storages[storage_num] = 0
-                    res_dict["import_grid"] += demand
+                    res_dict["import_grid_kwh"] += demand
                 # If house has a over production
                 elif demand < 0:
                     production = -1*demand
@@ -224,7 +243,7 @@ class Grid:
                     else:
                         production -= self._max_capacities_storages[storage_num] - self._charge_level_storages[storage_num]
                         self._charge_level_storages[storage_num] = self._max_capacities_storages[storage_num]
-                        res_dict["export_grid"] += production
+                        res_dict["export_grid_kwh"] += production
 
         return res_dict
 
