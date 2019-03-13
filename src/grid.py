@@ -48,11 +48,11 @@ class Grid:
         self._peak_power_pv = pv_peakpower
 
         # Set indicator for cost settings and list all prices
-        self.__set_costs = False
-        self.__cost_kwh_grid_import = 0 # Price per kWh imported from power grid
-        self.__gain_kwh_grid_export = 0 # Price per kWh exported to the power grid
-        self.__cost_storage_per_kwh = 0 # Price per kWh in storage system
-        self.__cost_pv_per_kwp = 0
+        self._set_costs = False
+        self._cost_kwh_grid_import = 0 # Price per kWh imported from power grid
+        self._gain_kwh_grid_export = 0 # Price per kWh exported to the power grid
+        self._cost_storage_per_kwh = 0 # Price per kWh in storage system
+        self._cost_pv_per_kwp = 0
 
 
     def set_costs(self,kwh_import=0.25,kwh_export=0.10,cost_storage_kwh=500,cost_pv_kwp=1400):
@@ -63,15 +63,14 @@ class Grid:
         :param cost_storage_kwh: Price per kwh in storage
         :param cost_pv_kwp: Price per kWp for solar panels
         """
-        self.__cost_kwh_grid_import = kwh_import
-        self.__gain_kwh_grid_export = kwh_export
-        self.__cost_storage_per_kwh = cost_storage_kwh
-        self.__cost_pv_per_kwp = cost_pv_kwp
+        self._cost_kwh_grid_import = kwh_import
+        self._gain_kwh_grid_export = kwh_export
+        self._cost_storage_per_kwh = cost_storage_kwh
+        self._cost_pv_per_kwp = cost_pv_kwp
 
 
         # indicate that prices are set
-        self.__set_costs = True
-
+        self._set_costs = True
 
     def randomize(self):
         """
@@ -80,6 +79,25 @@ class Grid:
         for i in range(self._num_houses):
             self._house_storage_connections[i] = int(self._num_storages * random.random())
             self._house_pv_type[i] = int((self._num_pvtypes + 1) * random.random()) - 1
+
+    def get_copy(self):
+        """Returns a copy of itself."""
+        g_copy = Grid(num_houses=self._num_houses,
+                      num_storages=self._num_storages,
+                      max_capacity=self._max_capacities_storages,
+                      num_pvtypes=self._num_pvtypes,
+                      pv_peakpower=self._peak_power_pv
+                    )
+        g_copy._house_storage_connections = self._house_storage_connections
+        g_copy._house_pv_type = self._house_pv_type
+        g_copy._charge_level_storages = self._charge_level_storages
+        g_copy._set_costs = self._set_costs
+        g_copy._cost_kwh_grid_import = self._cost_kwh_grid_import
+        g_copy._gain_kwh_grid_export = self._gain_kwh_grid_export
+        g_copy._cost_storage_per_kwh = self._cost_storage_per_kwh
+        g_copy._cost_pv_per_kwp = self._cost_pv_per_kwp
+        return g_copy
+
 
     def mutate(self,num_house=-1,storage_connection=True,pv_type=True):
         """
@@ -185,7 +203,8 @@ class Grid:
             'grid.simulate(): df_prod should hold prod data for all pv types'
 
         # If there are pvtypes both DataFrames should have same length
-        if self._num_pvtypes > 0: assert data_cons.shape == data_prod.shape, 'DataFrames of prod and cons need same shape!'
+        if self._num_pvtypes > 0: assert data_cons.shape[0] == data_prod.shape[0], \
+            'grid.simulate(): DataFrames of prod and cons need same length!'
 
         # Create a dictionary for output
         res_dict = {
@@ -203,19 +222,19 @@ class Grid:
         if self._num_pvtypes == 1: data_prod = data_prod.reshape(data_prod.shape[0],1)
 
         # Calculate initial costs
-        if not self.__set_costs: sys.exit('Set costs before simulating the grid!')
+        if not self._set_costs: sys.exit('Set costs before simulating the grid!')
         # Check which storages are used
         used_storages = np.unique(self._house_storage_connections)
         all_storages = np.arange(self._num_storages)
         mask =  np.isin(all_storages,used_storages,invert=True)
         not_used_storages = all_storages[mask]
         for k in not_used_storages: self._max_capacities_storages[k] = 0
-        res_dict["setup_cost_storage"] = np.sum(self._max_capacities_storages)*self.__cost_storage_per_kwh
+        res_dict["setup_cost_storage"] = np.sum(self._max_capacities_storages)*self._cost_storage_per_kwh
         # Sum all kWp ours installed on the houses
         for k in self._house_pv_type:
             if k == -1:
                 continue
-            res_dict["setup_cost_pv"] += self._peak_power_pv[k]*self.__cost_pv_per_kwp
+            res_dict["setup_cost_pv"] += self._peak_power_pv[k]*self._cost_pv_per_kwp
 
         # Loop over all time steps
         for i in range(data_cons.shape[0]):
@@ -253,8 +272,8 @@ class Grid:
                         res_dict["export_grid_kwh"] += production
 
         # Calculate the expenses and reward for importing and exporting
-        res_dict["cost_import_grid"] = res_dict["import_grid_kwh"]*self.__cost_kwh_grid_import
-        res_dict["reward_export_grid"] = res_dict["export_grid_kwh"] * self.__gain_kwh_grid_export
+        res_dict["cost_import_grid"] = res_dict["import_grid_kwh"]*self._cost_kwh_grid_import
+        res_dict["reward_export_grid"] = res_dict["export_grid_kwh"] * self._gain_kwh_grid_export
         # Return results
         return res_dict
 
