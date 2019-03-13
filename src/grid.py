@@ -44,6 +44,8 @@ class Grid:
         self._charge_level_storages = np.zeros(self._num_storages, dtype=float)
         # Maximum capacity of each storage in kWh
         self._max_capacities_storages = max_capacity
+        # Performance of single pv types
+        self._peak_power_pv = pv_peakpower
 
         # Set indicator for cost settings and list all prices
         self.__set_costs = False
@@ -209,6 +211,11 @@ class Grid:
         not_used_storages = all_storages[mask]
         for k in not_used_storages: self._max_capacities_storages[k] = 0
         res_dict["setup_cost_storage"] = np.sum(self._max_capacities_storages)*self.__cost_storage_per_kwh
+        # Sum all kWp ours installed on the houses
+        for k in self._house_pv_type:
+            if k == -1:
+                continue
+            res_dict["setup_cost_pv"] += self._peak_power_pv[k]*self.__cost_pv_per_kwp
 
         # Loop over all time steps
         for i in range(data_cons.shape[0]):
@@ -245,6 +252,10 @@ class Grid:
                         self._charge_level_storages[storage_num] = self._max_capacities_storages[storage_num]
                         res_dict["export_grid_kwh"] += production
 
+        # Calculate the expenses and reward for importing and exporting
+        res_dict["cost_import_grid"] = res_dict["import_grid_kwh"]*self.__cost_kwh_grid_import
+        res_dict["reward_export_grid"] = res_dict["export_grid_kwh"] * self.__gain_kwh_grid_export
+        # Return results
         return res_dict
 
 if __name__ == '__main__':
