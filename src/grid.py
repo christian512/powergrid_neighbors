@@ -98,7 +98,6 @@ class Grid:
         g_copy._cost_pv_per_kwp = self._cost_pv_per_kwp
         return g_copy
 
-
     def mutate(self,num_house=-1,storage_connection=True,pv_type=True):
         """
         Mutates the storage connection and type of installed pv
