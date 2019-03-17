@@ -14,7 +14,9 @@ class Grid:
         Initializes the neighborhood grid.
         :param num_houses: Number of houses included in the neighborhood
         :param num_storages: Number of storages in the neighborhood
-        :param max_capacity: Gives the maximum capacity [kWh] for the storages / either list for individual or float for everyone
+        :param max_capacity: Gives the maximum capacity [kWh] for the storages / either list for individual or
+                             float for everyone
+                             This also gives the upper boundary for mutations of storage sizes
         :param num_pvtypes: Number of different pvtypes available
         :param pv_peakpower: The peak power for all pv types [kWp], if only integer it will be changed to list (as max_capacity)
         """
@@ -97,11 +99,13 @@ class Grid:
         g_copy._cost_pv_per_kwp = self._cost_pv_per_kwp
         return g_copy
 
-    def mutate(self,num_house=-1,storage_connection=True,pv_type=True):
+    def mutate(self,num_house=-1,num_storage=-1,storage_connection=False,storage_sizes=False,pv_type=False):
         """
-        Mutates the storage connection and type of installed pv
+        Mutates the storage connection and type of installed pv of ONE house
         :param num_house: Number of house to mutate, if -1 it is random
+        :param num_storage: Number of storage to be mutated, only for storage_sizes=True
         :param storage_connection: Bool if storage connection should be mutated
+        :param storage_sizes: Bool if storage sizes should be mutated
         :param pv_type: Bool if pv_type should be mutated
         """
         # Assert that we have more then one possibility
@@ -115,6 +119,14 @@ class Grid:
             old_storage_connection = self._house_storage_connections[num_house]
             while old_storage_connection == self._house_storage_connections[num_house]:
                 self._house_storage_connections[num_house] = int(self._num_storages * random.random())
+
+        if storage_sizes:
+            if num_storage == -1:
+                num_storage = int(self._num_storages * random.random())
+            # Set new storage size which should be max capacity at maximum
+            self._max_capacities_storages[num_storage] = int(self._max_capacities_storages[num_storage] * random.random())
+
+
         # Mutate pv type
         if pv_type:
             assert self._num_pvtypes > 0, 'Mutation of pvtype not possible: No pv_types available'
@@ -122,13 +134,14 @@ class Grid:
             while old_pv_type == self._house_pv_type[num_house]:
                 self._house_pv_type[num_house] = int((self._num_pvtypes + 1) * random.random()) - 1
 
-    def crossover(self,other_grid,storage_connection=True,pv_type=True,pos=[-1,-1]):
+    def crossover(self,other_grid,storage_connection=False,storage_sizes=False,pv_type=False,pos=[-1,-1,-1]):
         """
         Crosses the properties of one grid with another
         :param other_grid: The other grid to crossover with
         :param storage_connection: Boolean should storage connections be crossed
         :param pv_type: Boolean should pv_types be crossed
-        :param pos: Position of crossover one for storage one for pv_type / -1 for random
+        :param storage_sizes: Bool should storage_sizes be crossed
+        :param pos: Position of crossover one for storage connection, sizes and pv_type / -1 for random
         :return: other_grid crossover with this grid
         """
         assert self._num_houses == other_grid._num_houses
@@ -144,15 +157,26 @@ class Grid:
             self._house_storage_connections[pos[0]:] = np.copy(other_grid._house_storage_connections[pos[0]:])
             other_grid._house_storage_connections[pos[0]:] = np.copy(tmp)
 
-        if pv_type and self._num_pvtypes > 0:
+        if storage_sizes:
             # Get point for crossover
             if pos[1] == -1:
-                pos[1] = int(self._num_pvtypes*random.random())
-            assert pos[1] < self._num_pvtypes
+                pos[1] = int(self._num_storages*random.random())
+            assert pos[1] < self._num_houses
             # Crossover
-            tmp = np.copy(self._house_pv_type[pos[1]:])
-            self._house_pv_type[pos[1]:] = np.copy(other_grid._house_pv_type[pos[1]:])
-            other_grid._house_pv_type[pos[1]:] = np.copy(tmp)
+            tmp = np.copy(self._max_capacities_storages[pos[1]:])
+            self._max_capacities_storages[pos[1]:] = np.copy(other_grid._max_capacities_storages[pos[1]:])
+            other_grid._max_capacities_storages[pos[1]:] = np.copy(tmp)
+
+
+        if pv_type and self._num_pvtypes > 0:
+            # Get point for crossover
+            if pos[2] == -1:
+                pos[2] = int(self._num_pvtypes*random.random())
+            assert pos[2] < self._num_pvtypes
+            # Crossover
+            tmp = np.copy(self._house_pv_type[pos[2]:])
+            self._house_pv_type[pos[2]:] = np.copy(other_grid._house_pv_type[pos[2]:])
+            other_grid._house_pv_type[pos[2]:] = np.copy(tmp)
 
         return other_grid
 
@@ -268,6 +292,9 @@ class Grid:
                         production -= self._max_capacities_storages[storage_num] - self._charge_level_storages[storage_num]
                         self._charge_level_storages[storage_num] = self._max_capacities_storages[storage_num]
                         res_dict["export_grid_kwh"] += production
+
+        # Reset charge levels to zero
+        self._charge_level_storages = np.zeros(self._num_storages, dtype=float)
 
         # Calculate the expenses and reward for importing and exporting
         res_dict["cost_import_grid"] = res_dict["import_grid_kwh"]*self._cost_kwh_grid_import
