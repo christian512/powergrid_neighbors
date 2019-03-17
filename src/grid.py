@@ -7,7 +7,6 @@ class Grid:
     """
     Class that represents the neighborhood grid and
     includes various operations such as changing grid lines.
-    # TODO: function that calculates the different cost quantities for a specific timeinterval
     """
 
     def __init__(self,num_houses=10, num_storages=1,max_capacity=5,num_pvtypes=1,pv_peakpower=1):
