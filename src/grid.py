@@ -55,7 +55,6 @@ class Grid:
         self._cost_storage_per_kwh = 0 # Price per kWh in storage system
         self._cost_pv_per_kwp = 0
 
-
     def set_costs(self,kwh_import=0.25,kwh_export=0.10,cost_storage_kwh=500,cost_pv_kwp=1400):
         """
         Setting the costs, for different quantities listed below (all prices in EURO)
@@ -189,6 +188,30 @@ class Grid:
         assert pv_type < self._num_pvtypes, 'Choose a PV type within the range of available pv types '
         assert num_house < self._num_houses, 'Choose a house within the range of available houses'
         self._house_pv_type[num_house] = pv_type
+
+    def change_storages(self,num_storages=1,max_capacity = 0):
+        """
+        Changes the storage network of the grid model
+        :param num_storages: Number of storages in the grid
+        :param max_capacity: maximum capacity for each storage either list or int
+        """
+        assert num_storages > 0
+        # List of all max capacites
+        if isinstance(max_capacity,list) or isinstance(max_capacity,np.ndarray):
+            assert len(max_capacity) == num_storages
+        else:
+            max_capacity = np.array([max_capacity]*num_storages)
+
+        # Set class vars
+        self._num_storages = num_storages
+        self._charge_level_storages = np.zeros(self._num_storages, dtype=float)
+        self._max_capacities_storages = max_capacity
+
+        # Random connections to storages
+        for i in range(self._num_houses):
+            self._house_storage_connections[i] = int(self._num_storages * random.random())
+
+
 
     def change_storage_connection(self,num_house=0,storage_connection=0):
         """
