@@ -328,15 +328,4 @@ class Grid:
 if __name__ == '__main__':
     # Some basic tests
     g1 = Grid(num_houses=10,num_storages=1,max_capacity=3,num_pvtypes=1)
-    g2 = Grid(num_houses=10, num_storages=1, max_capacity=3, num_pvtypes=1)
-    g1.randomize()
-    g1.print()
-    g2.print()
-    print('+++ Crossover +++')
-    g2 = g1.crossover(g2,storage_connection=True,pv_type=True,pos=[-1,-1])
-    g1.print()
-    g2.print()
-    print('+++ Mutation +++')
-    g1.mutate(num_house=0,storage_connection=False,pv_type=True)
-    g1.print()
-    g2.print()
+    g1.change_storages(num_storages=5,max_capacity=1)
