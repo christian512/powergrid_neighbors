@@ -45,6 +45,8 @@ class Grid:
         self._charge_level_storages = np.zeros(self._num_storages, dtype=float)
         # Maximum capacity of each storage in kWh
         self._max_capacities_storages = max_capacity
+        # Position of each storage
+        self._storage_pos = np.zeros(self._num_storages,dtype=int)
         # Performance of single pv types
         self._peak_power_pv = pv_peakpower
 
