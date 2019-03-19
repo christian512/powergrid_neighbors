@@ -1,0 +1,8 @@
+Strategy 1: 
+
+Optimize the size of the pv modules on each house individually, using the scaled data of one pv module (sized with 1 kWp). Hence every house has the same production schedule just in different scales, but each house has an individual consumption schedule.
+Afterwards optimize the storage system. NEED TO EXPAND THIS PLANS!
+
+Strategy 2: 
+
+Choose specific houses from the dataset with their pv production. So we do not need to choose the pv modules. Optimize the storage system, that is connected to the houses. First choose number of houses as the number of storages (this is a boundary case of everyone has its own storage). Other case, use only one storage with reasonable size. Check the two boundaries before implementing the genetic  algorithm.
