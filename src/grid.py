@@ -46,7 +46,7 @@ class Grid:
         # Maximum capacity of each storage in kWh
         self._max_capacities_storages = max_capacity
         # Position of each storage
-        self._storage_pos = np.linspace(0,self._num_houses,self._num_storages,dtype=int)
+        self._storage_pos = np.linspace(0,self._num_houses,self._num_storages,dtype=int,endpoint=False)
         # Performance of single pv types
         self._peak_power_pv = pv_peakpower
 
@@ -213,7 +213,7 @@ class Grid:
         self._num_storages = num_storages
         self._charge_level_storages = np.zeros(self._num_storages, dtype=float)
         self._max_capacities_storages = max_capacity
-        self._storage_pos = np.linspace(0,self._num_houses,self._num_storages,dtype=int)
+        self._storage_pos = np.linspace(0,self._num_houses,self._num_storages,dtype=int,endpoint=False)
 
         # Random connections to storages
         for i in range(self._num_houses):
