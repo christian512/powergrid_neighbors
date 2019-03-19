@@ -56,20 +56,25 @@ class Grid:
         self._gain_kwh_grid_export = 0 # Price per kWh exported to the power grid
         self._cost_storage_per_kwh = 0 # Price per kWh in storage system
         self._cost_pv_per_kwp = 0
+        self._cost_per_wire = 0
+        self._loss_per_unit = 0
 
-    def set_costs(self,kwh_import=0.25,kwh_export=0.10,cost_storage_kwh=500,cost_pv_kwp=1400):
+    def set_costs(self,kwh_import=0.25,kwh_export=0.10,cost_storage_kwh=500,cost_pv_kwp=1400,cost_per_wire=500,loss_per_unit=0.1):
         """
         Setting the costs, for different quantities listed below (all prices in EURO)
         :param kwh_import: Price per kwh imported
         :param kwh_export: Amount you get for exporting one kWH
         :param cost_storage_kwh: Price per kwh in storage
         :param cost_pv_kwp: Price per kWp for solar panels
+        :param cost_per_wire: Cost per wire connection from one house to its direct neighbor
+        :param loss_per_unit: Loss of energy from transferring energy from one house to another
         """
         self._cost_kwh_grid_import = kwh_import
         self._gain_kwh_grid_export = kwh_export
         self._cost_storage_per_kwh = cost_storage_kwh
         self._cost_pv_per_kwp = cost_pv_kwp
-
+        self._cost_per_wire = cost_per_wire
+        self._loss_per_unit = loss_per_unit
 
         # indicate that prices are set
         self._set_costs = True
@@ -208,12 +213,11 @@ class Grid:
         self._num_storages = num_storages
         self._charge_level_storages = np.zeros(self._num_storages, dtype=float)
         self._max_capacities_storages = max_capacity
+        self._storage_pos = np.linspace(0,self._num_houses,self._num_storages,dtype=int)
 
         # Random connections to storages
         for i in range(self._num_houses):
             self._house_storage_connections[i] = int(self._num_storages * random.random())
-
-
 
     def change_storage_connection(self,num_house=0,storage_connection=0):
         """
@@ -231,6 +235,7 @@ class Grid:
         print('pv_peakpowers: ' + str(self._peak_power_pv))
         print('storag_conns: ' + str(self._house_storage_connections))
         print('storage_capacities: ' + str(self._max_capacities_storages))
+        print('storage_positions:' + str(self._storage_pos))
         
     def simulate(self, data_cons, data_prod):
         """
@@ -275,7 +280,7 @@ class Grid:
         # Check which storages are used
         used_storages = np.unique(self._house_storage_connections)
         all_storages = np.arange(self._num_storages)
-        mask =  np.isin(all_storages,used_storages,invert=True)
+        mask = np.isin(all_storages,used_storages,invert=True)
         not_used_storages = all_storages[mask]
         for k in not_used_storages: self._max_capacities_storages[k] = 0
         res_dict["setup_cost_storage"] = np.sum(self._max_capacities_storages)*self._cost_storage_per_kwh
@@ -289,9 +294,11 @@ class Grid:
         for i in range(data_cons.shape[0]):
             # Take each house
             for house_num in range(self._num_houses):
-                # Get PV type and connected storage number
+                # Get PV type, connected storage number, storage position
                 pv_type = self._house_pv_type[house_num]
                 storage_num = self._house_storage_connections[house_num]
+                storage_pos = self._storage_pos[house_num]
+                loss = self.__get_loss(storage_pos,house_num)
                 # Get energy demand of house
                 demand = data_cons[i, house_num]
                 # Check if there is energy coming from PV
@@ -301,22 +308,24 @@ class Grid:
                     demand = demand - data_prod[i, pv_type]
 
                 # If the house needs energy and enough energy is in storage
-                if self._charge_level_storages[storage_num] >= demand and demand > 0:
-                    self._charge_level_storages[storage_num] -= demand
+                if self._charge_level_storages[storage_num] >= demand*(1+loss) and demand > 0:
+                    self._charge_level_storages[storage_num] -= demand*(1+loss)
                 # If house need energy and storage only has partial energy
-                elif self._charge_level_storages[storage_num] < demand and demand > 0:
-                    demand -= self._charge_level_storages[storage_num]
+                elif self._charge_level_storages[storage_num] < demand*(1+loss) and demand > 0:
+                    demand -= self._charge_level_storages[storage_num]*(1-loss)
                     self._charge_level_storages[storage_num] = 0
                     res_dict["import_grid_kwh"] += demand
                 # If house has a over production
                 elif demand < 0:
                     production = -1*demand
                     # If storage has enough space for the whole energy
-                    if production <= self._max_capacities_storages[storage_num] - self._charge_level_storages[storage_num]:
-                        self._charge_level_storages[storage_num] += production
+                    if production*(1-loss) <= \
+                            self._max_capacities_storages[storage_num] - self._charge_level_storages[storage_num]:
+                        self._charge_level_storages[storage_num] += production*(1-loss)
                     # If there is not enough space in the energy storage system
                     else:
-                        production -= self._max_capacities_storages[storage_num] - self._charge_level_storages[storage_num]
+                        production -= (self._max_capacities_storages[storage_num] -
+                                       self._charge_level_storages[storage_num])*(1+loss)
                         self._charge_level_storages[storage_num] = self._max_capacities_storages[storage_num]
                         res_dict["export_grid_kwh"] += production
 
@@ -328,6 +337,23 @@ class Grid:
         res_dict["reward_export_grid"] = res_dict["export_grid_kwh"] * self._gain_kwh_grid_export
         # Return results
         return res_dict
+
+    def __get_loss(self,storage_pos,house_pos):
+        """
+        Calculates the loss between a house and a storage at given positions
+        :param storage_pos: Position of the storage
+        :param house_pos: Position of the house
+        :return: loss
+        """
+        if storage_pos == house_pos: return 0
+        pos1 = max(storage_pos,house_pos)
+        pos2 = min(storage_pos,house_pos)
+        if pos1 % 2 == pos2 % 2: return (pos1-pos2)/2*self._loss_per_unit
+        elif pos1 % 2 == 1: return (pos1-pos2+1)/2*self._loss_per_unit
+        elif pos1 % 2 == 0: return (pos1-pos2+1)/2*self._loss_per_unit
+
+        sys.exit('Could not calculate loss')
+
 
 if __name__ == '__main__':
     # Some basic tests
