@@ -297,7 +297,7 @@ class Grid:
                 # Get PV type, connected storage number, storage position
                 pv_type = self._house_pv_type[house_num]
                 storage_num = self._house_storage_connections[house_num]
-                storage_pos = self._storage_pos[house_num]
+                storage_pos = self._storage_pos[storage_num]
                 loss = self.__get_loss(storage_pos,house_num)
                 # Get energy demand of house
                 demand = data_cons[i, house_num]
