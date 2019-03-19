@@ -226,8 +226,10 @@ class Grid:
     def print(self):
         """Prints certain information"""
         print('pv_types: ' + str(self._house_pv_type))
+        print('pv_peakpowers: ' + str(self._peak_power_pv))
         print('storag_conns: ' + str(self._house_storage_connections))
-
+        print('storage_capacities: ' + str(self._max_capacities_storages))
+        
     def simulate(self, data_cons, data_prod):
         """
         Function that simulates the neighborhood energyflow for a given timeinterval.
