@@ -96,6 +96,7 @@ class Grid:
                       pv_peakpower=self._peak_power_pv
                     )
         g_copy._house_storage_connections = self._house_storage_connections
+        g_copy._storage_pos = self._storage_pos
         g_copy._house_pv_type = self._house_pv_type
         g_copy._charge_level_storages = self._charge_level_storages
         g_copy._set_costs = self._set_costs
@@ -103,6 +104,8 @@ class Grid:
         g_copy._gain_kwh_grid_export = self._gain_kwh_grid_export
         g_copy._cost_storage_per_kwh = self._cost_storage_per_kwh
         g_copy._cost_pv_per_kwp = self._cost_pv_per_kwp
+        g_copy._cost_per_wire = self._cost_per_wire
+        g_copy._loss_per_unit = self._loss_per_unit
         return g_copy
 
     def mutate(self,num_house=-1,num_storage=-1,storage_connection=False,storage_sizes=False,pv_type=False):
