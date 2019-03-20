@@ -27,11 +27,11 @@ class Grid:
         if isinstance(max_capacity,list) or isinstance(max_capacity,np.ndarray):
             assert len(max_capacity) == num_storages
         else:
-            max_capacity = np.array([max_capacity]*num_storages)
+            max_capacity = np.array([max_capacity]*num_storages,dtype=float)
         if isinstance(pv_peakpower,list) or isinstance(pv_peakpower,np.ndarray):
             assert len(pv_peakpower) == num_pvtypes
         else:
-            pv_peakpower = np.array([pv_peakpower]*num_pvtypes)
+            pv_peakpower = np.array([pv_peakpower]*num_pvtypes,dtype=float)
         # Store variables in object
         self._num_houses = num_houses
         self._num_storages = num_storages
@@ -136,8 +136,9 @@ class Grid:
             # Set new storage size which should be max capacity at maximum
             if len(storage_cap_list) > 0:
                 self._max_capacities_storages[num_storage] = random.choice(list(storage_cap_list))
-            else:
-                self._max_capacities_storages[num_storage] = int(self._max_capacities_storages[num_storage] * random.random())
+            if len(storage_cap_list) == 0:
+                print('Need cap list')
+                #self._max_capacities_storages[num_storage] = int(self._max_capacities_storages[num_storage] * random.random())
 
 
         # Mutate pv type
