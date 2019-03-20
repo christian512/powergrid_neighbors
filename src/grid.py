@@ -353,12 +353,14 @@ class Grid:
         :param house_pos: Position of the house
         :return: loss
         """
-        if storage_pos == house_pos: return 0
+        dist = 0
+        if storage_pos == house_pos: dist =  0
         pos1 = max(storage_pos,house_pos)
         pos2 = min(storage_pos,house_pos)
-        if pos1 % 2 == pos2 % 2: return (pos1-pos2)/2*self._loss_per_unit
-        elif pos1 % 2 == 1: return (pos1-pos2+1)/2*self._loss_per_unit
-        elif pos1 % 2 == 0: return (pos1-pos2+1)/2*self._loss_per_unit
+        if pos1 % 2 == pos2 % 2: dist = (pos1-pos2)/2
+        elif pos1 % 2 == 1: dist = (pos1-pos2+1)/2
+        elif pos1 % 2 == 0: dist = (pos1-pos2+1)/2
+        return np.min(dist*self._loss_per_unit,1)
 
         sys.exit('Could not calculate loss')
 
