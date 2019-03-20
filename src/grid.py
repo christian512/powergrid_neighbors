@@ -95,10 +95,10 @@ class Grid:
                       num_pvtypes=self._num_pvtypes,
                       pv_peakpower=self._peak_power_pv
                     )
-        g_copy._house_storage_connections = self._house_storage_connections
-        g_copy._storage_pos = self._storage_pos
-        g_copy._house_pv_type = self._house_pv_type
-        g_copy._charge_level_storages = self._charge_level_storages
+        g_copy._house_storage_connections = np.copy(self._house_storage_connections)
+        g_copy._storage_pos = np.copy(self._storage_pos)
+        g_copy._house_pv_type = np.copy(self._house_pv_type)
+        g_copy._charge_level_storages = np.copy(self._charge_level_storages)
         g_copy._set_costs = self._set_costs
         g_copy._cost_kwh_grid_import = self._cost_kwh_grid_import
         g_copy._gain_kwh_grid_export = self._gain_kwh_grid_export
