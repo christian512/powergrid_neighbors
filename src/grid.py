@@ -360,7 +360,8 @@ class Grid:
         if pos1 % 2 == pos2 % 2: dist = (pos1-pos2)/2
         elif pos1 % 2 == 1: dist = (pos1-pos2+1)/2
         elif pos1 % 2 == 0: dist = (pos1-pos2+1)/2
-        return np.min(dist*self._loss_per_unit,1)
+
+        return np.min([dist*self._loss_per_unit,1])
 
         sys.exit('Could not calculate loss')
 
