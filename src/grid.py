@@ -108,7 +108,7 @@ class Grid:
         g_copy._loss_per_unit = self._loss_per_unit
         return g_copy
 
-    def mutate(self,num_house=-1,num_storage=-1,storage_connection=False,storage_sizes=False,pv_type=False):
+    def mutate(self,num_house=-1,num_storage=-1,storage_connection=False,storage_sizes=False,pv_type=False,storage_cap_list=[]):
         """
         Mutates the storage connection and type of installed pv of ONE house
         :param num_house: Number of house to mutate, if -1 it is random
@@ -116,6 +116,7 @@ class Grid:
         :param storage_connection: Bool if storage connection should be mutated
         :param storage_sizes: Bool if storage sizes should be mutated
         :param pv_type: Bool if pv_type should be mutated
+        :param storage_cap_list: List of storage capacities to choose from if storage_sizes == True
         """
         # Assert that we have more then one possibility
 
@@ -133,7 +134,10 @@ class Grid:
             if num_storage == -1:
                 num_storage = int(self._num_storages * random.random())
             # Set new storage size which should be max capacity at maximum
-            self._max_capacities_storages[num_storage] = int(self._max_capacities_storages[num_storage] * random.random())
+            if len(storage_cap_list) > 0:
+                self._max_capacities_storages[num_storage] = random.sample(list(storage_cap_list),1)
+            else:
+                self._max_capacities_storages[num_storage] = int(self._max_capacities_storages[num_storage] * random.random())
 
 
         # Mutate pv type
@@ -361,4 +365,7 @@ class Grid:
 if __name__ == '__main__':
     # Some basic tests
     g1 = Grid(num_houses=10,num_storages=1,max_capacity=3,num_pvtypes=1)
-    g1.change_storages(num_storages=5,max_capacity=1)
+    g2 = g1.get_copy()
+    g1.change_storages(num_storages=3,max_capacity=3)
+    g1.print()
+    g2.print()
