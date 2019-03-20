@@ -135,7 +135,7 @@ class Grid:
                 num_storage = int(self._num_storages * random.random())
             # Set new storage size which should be max capacity at maximum
             if len(storage_cap_list) > 0:
-                self._max_capacities_storages[num_storage] = random.sample(list(storage_cap_list),1)
+                self._max_capacities_storages[num_storage] = random.choice(list(storage_cap_list))
             else:
                 self._max_capacities_storages[num_storage] = int(self._max_capacities_storages[num_storage] * random.random())
 
