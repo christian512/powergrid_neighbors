@@ -164,7 +164,7 @@ class Grid:
         if storage_connection:
             # Get point for crossover
             if pos[0] == -1:
-                pos[0] = int(self._num_houses*random.random())
+                pos[0] = int((self._num_houses-1)*random.random())
             assert pos[0] < self._num_houses
             # Crossover
             tmp = np.copy(self._house_storage_connections[pos[0]:])
@@ -174,8 +174,8 @@ class Grid:
         if storage_sizes:
             # Get point for crossover
             if pos[1] == -1:
-                pos[1] = int(self._num_storages*random.random())
-            assert pos[1] < self._num_houses
+                pos[1] = int((self._num_storages-1)*random.random())
+            assert pos[1] < self._num_storages
             # Crossover
             tmp = np.copy(self._max_capacities_storages[pos[1]:])
             self._max_capacities_storages[pos[1]:] = np.copy(other_grid._max_capacities_storages[pos[1]:])
