@@ -79,21 +79,23 @@ class Grid:
         # indicate that prices are set
         self._set_costs = True
 
-    def randomize(self):
+    def randomize(self,storage_connections=True,pv_types=True):
         """
         Randomizes the setup of the current neighborhood
         """
         for i in range(self._num_houses):
-            self._house_storage_connections[i] = int(self._num_storages * random.random())
-            self._house_pv_type[i] = int((self._num_pvtypes + 1) * random.random()) - 1
+            if storage_connections:
+                self._house_storage_connections[i] = int((self._num_storages-1) * random.random())
+            if pv_types:
+                self._house_pv_type[i] = int((self._num_pvtypes + 1) * random.random()) - 1
 
     def get_copy(self):
         """Returns a copy of itself."""
         g_copy = Grid(num_houses=self._num_houses,
                       num_storages=self._num_storages,
-                      max_capacity=self._max_capacities_storages,
+                      max_capacity=np.copy(self._max_capacities_storages),
                       num_pvtypes=self._num_pvtypes,
-                      pv_peakpower=self._peak_power_pv
+                      pv_peakpower=np.copy(self._peak_power_pv)
                     )
         g_copy._house_storage_connections = np.copy(self._house_storage_connections)
         g_copy._storage_pos = np.copy(self._storage_pos)
@@ -124,8 +126,8 @@ class Grid:
         if num_house == -1:
             num_house = int(self._num_houses * random.random())
         # Mutate storage connection
-        if storage_connection:
-            assert self._num_storages > 1, 'Mutation of storage not possible: Only one storage available'
+        if storage_connection and self._num_storages > 1:
+            assert self._num_storages >= 1, 'Mutation of storage not possible: Only one storage available'
             old_storage_connection = self._house_storage_connections[num_house]
             while old_storage_connection == self._house_storage_connections[num_house]:
                 self._house_storage_connections[num_house] = int(self._num_storages * random.random())
@@ -185,7 +187,7 @@ class Grid:
         if pv_type and self._num_pvtypes > 0:
             # Get point for crossover
             if pos[2] == -1:
-                pos[2] = int(self._num_pvtypes*random.random())
+                pos[2] = int((self._num_pvtypes-1)*random.random())
             assert pos[2] < self._num_pvtypes
             # Crossover
             tmp = np.copy(self._house_pv_type[pos[2]:])
@@ -225,7 +227,7 @@ class Grid:
 
         # Random connections to storages
         for i in range(self._num_houses):
-            self._house_storage_connections[i] = int(self._num_storages * random.random())
+            self._house_storage_connections[i] = int((self._num_storages-1) * random.random())
 
     def change_storage_connection(self,num_house=0,storage_connection=0):
         """
