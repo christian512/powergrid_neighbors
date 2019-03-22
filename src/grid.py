@@ -46,7 +46,7 @@ class Grid:
         # Maximum capacity of each storage in kWh
         self._max_capacities_storages = max_capacity
         # Position of each storage
-        self._storage_pos = np.linspace(0,self._num_houses,self._num_storages-1,dtype=int)
+        self._storage_pos = np.linspace(0,self._num_houses-1,self._num_storages,dtype=int)
         # Performance of single pv types
         self._peak_power_pv = pv_peakpower
 
@@ -292,6 +292,7 @@ class Grid:
         all_storages = np.arange(self._num_storages)
         mask = np.isin(all_storages,used_storages,invert=True)
         not_used_storages = all_storages[mask]
+        org_max_capacities = np.copy(self._max_capacities_storages)
         for k in not_used_storages: self._max_capacities_storages[k] = 0
         res_dict["setup_cost_storage"] = np.sum(self._max_capacities_storages)*self._cost_storage_per_kwh
         # Sum all kWp ours installed on the houses
@@ -341,7 +342,8 @@ class Grid:
 
         # Reset charge levels to zero
         self._charge_level_storages = np.zeros(self._num_storages, dtype=float)
-
+        # Set back the to inital max capacities
+        self._max_capacities_storages = np.copy(org_max_capacities)
         # Calculate the expenses and reward for importing and exporting
         res_dict["cost_import_grid"] = res_dict["import_grid_kwh"]*self._cost_kwh_grid_import
         res_dict["reward_export_grid"] = res_dict["export_grid_kwh"] * self._gain_kwh_grid_export
@@ -366,6 +368,11 @@ class Grid:
         return np.min([dist*self._loss_per_unit,1])
 
         sys.exit('Could not calculate loss')
+        
+    def get_total_distance(self):
+        """Calculates the total number of wires need in the grid"""
+        return np.sum(np.abs(np.arange(self._num_houses)-self._house_storage_connections))
+    
 
 
 if __name__ == '__main__':
