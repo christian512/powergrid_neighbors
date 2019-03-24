@@ -371,7 +371,11 @@ class Grid:
         
     def get_total_distance(self):
         """Calculates the total number of wires need in the grid"""
-        return np.sum(np.abs(np.arange(self._num_houses)-self._house_storage_connections))
+        # Create a list for each storages position
+        pos_store = np.zeros(self._num_houses)
+        for i in range(self._house_storage_connections.shape[0]):
+            pos_store[i] = self._storage_pos[self._house_storage_connections[i]]
+        return np.sum(np.abs(np.arange(self._num_houses)-pos_store))
     
 
 
