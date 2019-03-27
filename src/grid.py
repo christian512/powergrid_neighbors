@@ -133,8 +133,10 @@ class Grid:
                 self._house_storage_connections[num_house] = int(self._num_storages * random.random())
 
         if storage_sizes:
-            if num_storage == -1:
+            if num_storage == -1 or num_storage not in self._house_storage_connections:
                 num_storage = int(self._num_storages * random.random())
+                while num_storage not in self._house_storage_connections:
+                    num_storage = int(self._num_storages * random.random())
             # Set new storage size which should be max capacity at maximum
             if len(storage_cap_list) > 0:
                 self._max_capacities_storages[num_storage] = random.choice(list(storage_cap_list))
