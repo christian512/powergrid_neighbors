@@ -14,7 +14,7 @@ However the implementation, described before, is able to handle other input data
 Some basic properties of the data set are show in [data_visualisation.ipynb](https://github.com/christian512/powergrid_neighbors/blob/master/data_visualisation.ipynb).
 
 ## Optimization of the storage system
-Adding a storage system, that allows households to share their produced power, introduces interaction between the houses. In order to optimize the objective function ( costs in a specific timeframe) we use a genetic algorithm, to change connections between houses and storages and the capacities of the storages. This algorithm optimizes also with regards to the losses in the system (longer connections have higher losses than shorter ones). The current implementation of the algorithm can be found at [strategy2_storage_optimization.ipynb](https://github.com/christian512/powergrid_neighbors/blob/master/strategy2_storage_optimization.ipynb).
+Adding a storage system, that allows households to share their produced power, introduces interaction between the houses. In order to optimize the objective function ( costs in a specific timeframe) we use a genetic algorithm, to change connections between houses and storages and the capacities of the storages. This algorithm optimizes also with regards to the losses in the system (longer connections have higher losses than shorter ones). The current implementation of the algorithm can be found at [storage_optimization.ipynb](https://github.com/christian512/powergrid_neighbors/blob/master/storage_optimization.ipynb).
 
 
 ## Optimization of the pv system sizes 
