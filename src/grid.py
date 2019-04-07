@@ -5,11 +5,12 @@ import sys
 
 class Grid:
     """
-    Class that represents the neighborhood grid and
-    includes various operations such as changing grid lines.
+    This class implements the a configuration of a neighborhood with all properties. Namely the are
+    pv systems, storages and connections of houses to the storages. The class also implements all
+    needed functionality to edit the configuration of the neighborhood in order to implement a genetic algorithm.
     """
 
-    def __init__(self,num_houses=10, num_storages=1,max_capacity=5,num_pvtypes=1,pv_peakpower=1):
+    def __init__(self,num_houses=10, num_storages=1, max_capacity=5, num_pvtypes=1, pv_peakpower=1):
         """
         Initializes the neighborhood grid.
         :param num_houses: Number of houses included in the neighborhood
@@ -82,6 +83,8 @@ class Grid:
     def randomize(self,storage_connections=True,pv_types=True):
         """
         Randomizes the setup of the current neighborhood
+        :param storage_connections : Should storage connections be randomized
+        :param pv_types : Should pv types be randomized
         """
         for i in range(self._num_houses):
             if storage_connections:
@@ -208,7 +211,7 @@ class Grid:
         assert num_house < self._num_houses, 'Choose a house within the range of available houses'
         self._house_pv_type[num_house] = pv_type
 
-    def change_storages(self,num_storages=1,max_capacity = 0):
+    def change_storages(self, num_storages=1, max_capacity = 0):
         """
         Changes the storage network of the grid model
         :param num_storages: Number of storages in the grid
@@ -256,7 +259,6 @@ class Grid:
         If a house demands energy and it is in the storage it just takes this, otherwise it buys it from the grid.
         If a house has a overproduction than it stores the energy in the storage if it is empty. Otherwise
         it sells the power to the grid.
-        # TODO: Dimension check for self._num_houses == 1 is not yet perfect!!
         :param data_cons: np.ndarray that contains the consumption data for all houses
         :param data_prod: np.ndarray that contains the pv_production data for all types of pv
         :return: Dictionary with several quantities
@@ -368,8 +370,6 @@ class Grid:
         elif pos1 % 2 == 0: dist = (pos1-pos2+1)/2
 
         return np.min([dist*self._loss_per_unit,1])
-
-        sys.exit('Could not calculate loss')
         
     def get_total_distance(self):
         """Calculates the total number of wires need in the grid"""
