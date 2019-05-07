@@ -1,6 +1,6 @@
 # Powergrid Neighborhood
-This is a test project for genetic algorithms, that should optimize costs for power within a residential neighborhood. Please note that this is just a test project and mainly written for a course at Københavns Universitet. 
-However it can illustrate the capabilities of genetic algorithms and also connect it to realistic problem. For more information please read the text below. The report (for the course at KU) will be uploaded later.
+This is a test project for genetic algorithms, that should optimize costs for power within a residential neighborhood. Please note that this is a non realistic model and only written for learning about genetic algorithms. 
+However it can illustrate the capabilities of genetic algorithms and also connect it to realistic problem. For more information please read the text below or the [report](https://github.com/christian512/powergrid_neighbors/blob/master/powergrid_neighbor.pdf)
 
 ## Model
 Implementation at [src/grid.py](https://github.com/christian512/powergrid_neighbors/blob/master/src/grid.py).
